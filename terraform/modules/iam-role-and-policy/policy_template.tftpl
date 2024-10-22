@@ -1,0 +1,76 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListBucketContents",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "${s3_bucket_arn}",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "images/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "GetObjectAndPutObject",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "${s3_bucket_arn}/images/*"
+    },
+    {
+      "Sid": "ReadWriteToDynamoDB",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": "${dynamodb_table_arn}"
+    },
+    {
+      "Sid": "SQSSendMessages",
+      "Effect": "Allow",
+      "Action": "sqs:SendMessage",
+      "Resource": [
+        "${identify_queue_arn}",
+        "${results_queue_arn}"
+      ]
+    },
+    {
+      "Sid": "SQSReceiveDeleteMessages",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:ChangeMessageVisibility"
+      ],
+      "Resource": [
+        "${identify_queue_arn}",
+        "${results_queue_arn}"
+      ]
+    },
+    {
+      "Sid": "SQSViewAttributes",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+      ],
+      "Resource": [
+        "${identify_queue_arn}",
+        "${results_queue_arn}"
+      ]
+    }
+  ]
+}

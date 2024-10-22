@@ -1,0 +1,73 @@
+name: Infrastructure Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: 'Select AWS Region'
+        required: true
+        type: choice
+        default: 'us-east-1: N. Virginia'
+        options:
+          - 'us-east-1: N. Virginia'
+          - 'us-east-2: Ohio'
+      environment:
+        description: 'Select Environment'
+        required: true
+        type: choice
+        default: prod
+        options:
+          - prod
+          - dev
+
+jobs:
+  Terraform:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    defaults:
+      run:
+        working-directory: ./terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.2
+
+      - name: Set Region
+        run: |
+          SELECTED_REGION="${{ inputs.region }}"
+          echo "AWS_REGION=${SELECTED_REGION%%:*}" >> $GITHUB_ENV
+
+      - name: Set Telegram Token
+        run: |
+          if [ "${{ env.AWS_REGION }}" == "us-east-1" ]; then
+            echo "TELEGRAM_TOKEN=${{ secrets.US_EAST_1_TELEGRAM_TOKEN }}" >> $GITHUB_ENV
+          elif [ "${{ env.AWS_REGION }}" == "us-east-2" ]; then
+            echo "TELEGRAM_TOKEN=${{ secrets.US_EAST_2_TELEGRAM_TOKEN }}" >> $GITHUB_ENV
+          fi
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform workspace select
+        run: terraform workspace select aux-infra-${{ inputs.environment }} || terraform workspace new aux-infra-${{ inputs.environment }}
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan destroy
+        run: |
+          terraform plan \
+            -var-file="${{ inputs.environment }}.tfvars" \
+            -var "env=${{ inputs.environment }}" \
+            -var "region=${{ env.AWS_REGION }}" \
+            -var "telegram_token_value=${{ env.TELEGRAM_TOKEN }}" \
+            -destroy -out ${{ inputs.environment }}.tfplan
+
+      - name: Destroy infrastructure
+        run: terraform apply -auto-approve ${{ inputs.environment }}.tfplan
