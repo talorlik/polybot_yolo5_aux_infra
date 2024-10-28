@@ -46,7 +46,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      OUTPUTS_ARTIFACT_NAME: ${{ needs.SetRegion.outputs.region_code }}-${{ inputs.environment }}-aux-infra-tf-outputs.json
+      OUTPUTS_ARTIFACT_NAME: ${{ inputs.environment }}-aux-infra-tf-outputs.json
     defaults:
       run:
         working-directory: ./terraform
